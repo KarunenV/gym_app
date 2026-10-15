@@ -1,56 +1,53 @@
 import 'package:flutter/material.dart';
+import '../models/profile.dart';
 import '../models/workout_group.dart';
+import '../repositories/base/session_repository.dart';
+import 'last_done_text.dart';
 
 class WorkoutCard extends StatelessWidget {
   const WorkoutCard({
     super.key,
-    required this.isKarunen,
-    required this.isAlice,
+    required this.profiles,
     required this.workoutGroup,
+    required this.sessionRepository,
     required this.onTap,
   });
 
-  final bool isKarunen;
-  final bool isAlice;
-  final WorkoutGroup? workoutGroup;
+  final List<Profile> profiles; // the ticked people
+  final WorkoutGroup workoutGroup;
+  final SessionRepository sessionRepository;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final subtitle = _buildSubtitle();
-    final displayColor = _getColor();
-    final displayIcon = _getDefaultIcon();
-    final displayLabel = _getDefaultLabel();
-
-    final enabled = isKarunen || isAlice;
+    final enabled = profiles.isNotEmpty;
 
     return Opacity(
       opacity: enabled ? 1.0 : 0.65,
       child: Card(
-        color: displayColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        color: _color(enabled),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: (!enabled || workoutGroup == null) ? null : onTap,
+          onTap: enabled ? onTap : null,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(displayIcon, size: 32),
+                Icon(_icon, size: 32),
                 const SizedBox(height: 8),
-                Text(
-                  displayLabel,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
+                Text(_label, style: const TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
-                Text(
-                  subtitle,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12),
-                ),
+                if (enabled)
+                  LastDoneText(
+                    repository: sessionRepository,
+                    profiles: profiles,
+                    group: workoutGroup,
+                    style: const TextStyle(fontSize: 12),
+                  )
+                else
+                  const Text('No trainee selected', style: TextStyle(fontSize: 12)),
               ],
             ),
           ),
@@ -59,11 +56,8 @@ class WorkoutCard extends StatelessWidget {
     );
   }
 
-  Color _getColor() {
-    if (!(isKarunen || isAlice)) {
-      return Colors.grey.shade300;
-    }
-
+  Color _color(bool enabled) {
+    if (!enabled) return Colors.grey.shade300;
     switch (workoutGroup) {
       case WorkoutGroup.upper:
         return Colors.blue.shade100;
@@ -71,31 +65,10 @@ class WorkoutCard extends StatelessWidget {
         return Colors.green.shade100;
       case WorkoutGroup.cardio:
         return Colors.orange.shade100;
-      default:
-        return Colors.grey.shade300;
     }
   }
 
-  String _buildSubtitle() {
-    final today = DateTime.now().toLocal();
-    final dateText = '${today.day}/${today.month}/${today.year}';
-
-    if (isKarunen && isAlice) {
-      return 'Karunen Last workout: $dateText\n\nAlice Last workout: $dateText';
-    }
-
-    if (isKarunen) {
-      return 'Karunen Last workout: $dateText';
-    }
-
-    if (isAlice) {
-      return 'Alice Last workout: $dateText';
-    }
-
-    return 'No trainee selected';
-  }
-
-  IconData _getDefaultIcon() {
+  IconData get _icon {
     switch (workoutGroup) {
       case WorkoutGroup.upper:
         return Icons.arrow_upward;
@@ -103,21 +76,11 @@ class WorkoutCard extends StatelessWidget {
         return Icons.arrow_downward;
       case WorkoutGroup.cardio:
         return Icons.directions_run;
-      default:
-        return Icons.fitness_center;
     }
   }
 
-  String _getDefaultLabel() {
-    switch (workoutGroup) {
-      case WorkoutGroup.upper:
-        return 'Upper';
-      case WorkoutGroup.lower:
-        return 'Lower';
-      case WorkoutGroup.cardio:
-        return 'Cardio';
-      default:
-        return 'Workout';
-    }
+  String get _label {
+    final n = workoutGroup.name;
+    return n[0].toUpperCase() + n.substring(1);
   }
 }

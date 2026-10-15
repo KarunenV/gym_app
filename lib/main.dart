@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
+import 'mock_data/exercises.dart';
 import 'pages/home_page.dart';
-import 'repositories/mock/mock_exercise_repository.dart';
+import 'repositories/firestore/firestore_exercise_repository.dart';
+import 'repositories/firestore/firestore_session_repository.dart';
 import 'repositories/mock/mock_profile_repository.dart';
 
 const String householdId = 'default_household';
@@ -30,9 +32,15 @@ class GymTrackerApp extends StatefulWidget {
 }
 
 class _GymTrackerAppState extends State<GymTrackerApp> {
-  // Created once, so ticking a box doesn't reset the data on rebuild.
-  final _exerciseRepo = MockExerciseRepository();
+  final _exerciseRepo = FirestoreExerciseRepository(householdId);
+  final _sessionRepo = FirestoreSessionRepository(householdId);
   final _profileRepo = MockProfileRepository();
+
+  @override
+  void initState() {
+    super.initState();
+    _exerciseRepo.seedIfNeeded(exercises); // temporary, until "add exercise" exists
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +49,7 @@ class _GymTrackerAppState extends State<GymTrackerApp> {
       debugShowCheckedModeBanner: false,
       home: HomePage(
         exercisesRepository: _exerciseRepo,
+        sessionRepository: _sessionRepo,
         profileRepository: _profileRepo,
       ),
     );

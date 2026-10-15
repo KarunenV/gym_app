@@ -1,8 +1,14 @@
+import '../../models/workout_group.dart';
 import '../../models/workout_session.dart';
 
-
 abstract class SessionRepository {
-  List<WorkoutSession> getWorkoutSessions();
+  /// Latest session for a person, optionally narrowed by group or exercise.
+  Stream<WorkoutSession?> watchLatest({
+    required String profileId,
+    WorkoutGroup? group,
+    String? exerciseId,
+  });
 
-  void addWorkoutSession(WorkoutSession session);
+  String newId();
+  void save(WorkoutSession session);
 }

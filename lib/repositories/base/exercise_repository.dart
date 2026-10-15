@@ -1,11 +1,8 @@
 import '../../models/exercise.dart';
 import '../../models/workout_group.dart';
 
-
 abstract class ExerciseRepository {
-  List<Exercise> getExercises();
-
-  List<Exercise> getExercisesByGroup(WorkoutGroup group);
-
-  void addExercise(Exercise exercise);
+  Stream<List<Exercise>> watchByGroup(WorkoutGroup group);
+  void add(Exercise exercise);
+  void seedIfNeeded(List<Exercise> defaults);
 }

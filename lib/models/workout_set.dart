@@ -1,10 +1,13 @@
 class WorkoutSet {
-  static int _nextId = 0;
-
-  final String id;
   int reps;
   double weight;
 
-  WorkoutSet({String? id, required this.reps, required this.weight})
-      : id = id ?? 'set_${_nextId++}';
+  WorkoutSet({required this.reps, required this.weight});
+
+  Map<String, dynamic> toMap() => {'reps': reps, 'weight': weight};
+
+  factory WorkoutSet.fromMap(Map<String, dynamic> map) => WorkoutSet(
+        reps: (map['reps'] as num).toInt(),
+        weight: (map['weight'] as num).toDouble(),
+      );
 }

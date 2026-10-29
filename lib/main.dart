@@ -7,6 +7,7 @@ import 'pages/home_page.dart';
 import 'repositories/firestore/firestore_exercise_repository.dart';
 import 'repositories/firestore/firestore_session_repository.dart';
 import 'repositories/mock/mock_profile_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 const String householdId = 'default_household';
 
@@ -15,6 +16,14 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  if (FirebaseAuth.instance.currentUser == null) {
+  try {
+    await FirebaseAuth.instance.signInAnonymously();
+  } catch (e) {
+    debugPrint('Auth failed: $e');
+  }
+}
 
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,

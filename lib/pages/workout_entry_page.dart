@@ -30,17 +30,20 @@ class WorkoutEntryPage extends StatelessWidget {
             tabs: [for (final p in profiles) Tab(text: p.name)],
           ),
         ),
-        body: TabBarView(
-          children: [
-            for (final p in profiles)
-              _ProfileTab(
-                key: ValueKey(p.id),
-                exercise: exercise,
-                profile: p,
-                sessionRepository: sessionRepository,
-              ),
-          ],
-        ),
+          body: SafeArea(
+            top: false,
+            child: TabBarView(
+              children: [
+                for (final p in profiles)
+                  _ProfileTab(
+                    key: ValueKey(p.id),
+                    exercise: exercise,
+                    profile: p,
+                    sessionRepository: sessionRepository,
+                  ),
+              ],
+            ),
+          ),
       ),
     );
   }
@@ -220,7 +223,7 @@ class _ProfileTabState extends State<_ProfileTab>
           Expanded(
             child: ListView.separated(
               itemCount: _rows.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, i) {
                 final row = _rows[i];
                 return Row(

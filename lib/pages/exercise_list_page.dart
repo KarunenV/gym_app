@@ -42,7 +42,13 @@ class ExerciseListPage extends StatelessWidget {
             return Center(child: Text('No exercises found for $_label.'));
           }
           return ListView.separated(
-            padding: const EdgeInsets.all(16),
+            // Bottom padding clears the FAB (~72) plus the system nav bar.
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              16 + 72 + MediaQuery.of(context).padding.bottom,
+            ),
             itemCount: exercises.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {

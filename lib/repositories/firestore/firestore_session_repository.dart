@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import '../../models/workout_group.dart';
 import '../../models/workout_session.dart';
 import '../base/session_repository.dart';
@@ -28,7 +29,7 @@ class FirestoreSessionRepository implements SessionRepository {
         .limit(1)
         .snapshots()
         .map((snap) =>
-            snap.docs.isEmpty ? null : WorkoutSession.fromDoc(snap.docs.first));
+    snap.docs.isEmpty ? null : WorkoutSession.fromDoc(snap.docs.first));
   }
 
   @override
@@ -36,6 +37,9 @@ class FirestoreSessionRepository implements SessionRepository {
 
   @override
   void save(WorkoutSession session) {
-    _col.doc(session.id).set(session.toMap()); // not awaited: works offline
+    // Not awaited: works offline. Failures are only logged.
+    _col.doc(session.id).set(session.toMap()).catchError((Object e) {
+      debugPrint('Session save failed: $e');
+    });
   }
 }

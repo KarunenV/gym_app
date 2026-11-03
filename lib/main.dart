@@ -1,9 +1,7 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
-import 'mock_data/exercises.dart';
 import 'models/auth_user.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
@@ -41,27 +39,8 @@ class _GymTrackerAppState extends State<GymTrackerApp> {
   final _sessionRepo = FirestoreSessionRepository(householdId);
   final _profileRepo = MockProfileRepository();
 
-  StreamSubscription<AuthUser?>? _authSub;
-  bool _seeded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Temporary, until "add exercise" exists. Must run after sign-in,
-    // otherwise the Firestore rules reject the write.
-    _authSub = _authRepo.authStateChanges().listen((user) {
-      if (user != null && !_seeded) {
-        _seeded = true;
-        _exerciseRepo.seedIfNeeded(exercises);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _authSub?.cancel();
-    super.dispose();
-  }
+  // Created once, so rebuilds don't resubscribe the StreamBuilder.
+  late final Stream<AuthUser?> _authStream = _authRepo.authStateChanges();
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +48,7 @@ class _GymTrackerAppState extends State<GymTrackerApp> {
       title: 'Gym Tracker',
       debugShowCheckedModeBanner: false,
       home: StreamBuilder<AuthUser?>(
-        stream: _authRepo.authStateChanges(),
+        stream: _authStream,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Scaffold(

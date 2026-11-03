@@ -6,5 +6,4 @@ abstract class ExerciseRepository {
 
   String newId();
   void add(Exercise exercise);
-  void seedIfNeeded(List<Exercise> defaults);
 }

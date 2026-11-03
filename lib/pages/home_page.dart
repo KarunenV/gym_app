@@ -13,11 +13,13 @@ class HomePage extends StatelessWidget {
     required this.exercisesRepository,
     required this.sessionRepository,
     required this.profileRepository,
+    required this.onSignOut,
   });
 
   final ExerciseRepository exercisesRepository;
   final SessionRepository sessionRepository;
   final ProfileRepository profileRepository;
+  final VoidCallback onSignOut;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +33,13 @@ class HomePage extends StatelessWidget {
             Text('Gym Tracker'),
           ],
         ),
+        actions: [
+          IconButton(
+            onPressed: onSignOut,
+            icon: const Icon(Icons.logout),
+            tooltip: 'Sign out',
+          ),
+        ],
       ),
       body: HomeBody(
         exercisesRepository: exercisesRepository,

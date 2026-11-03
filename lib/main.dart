@@ -1,13 +1,16 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'mock_data/exercises.dart';
+import 'models/auth_user.dart';
 import 'pages/home_page.dart';
+import 'pages/login_page.dart';
+import 'repositories/firebase/firebase_auth_repository.dart';
 import 'repositories/firestore/firestore_exercise_repository.dart';
 import 'repositories/firestore/firestore_session_repository.dart';
 import 'repositories/mock/mock_profile_repository.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 const String householdId = 'default_household';
 
@@ -16,14 +19,6 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  if (FirebaseAuth.instance.currentUser == null) {
-  try {
-    await FirebaseAuth.instance.signInAnonymously();
-  } catch (e) {
-    debugPrint('Auth failed: $e');
-  }
-}
 
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
@@ -41,14 +36,31 @@ class GymTrackerApp extends StatefulWidget {
 }
 
 class _GymTrackerAppState extends State<GymTrackerApp> {
+  final _authRepo = FirebaseAuthRepository();
   final _exerciseRepo = FirestoreExerciseRepository(householdId);
   final _sessionRepo = FirestoreSessionRepository(householdId);
   final _profileRepo = MockProfileRepository();
 
+  StreamSubscription<AuthUser?>? _authSub;
+  bool _seeded = false;
+
   @override
   void initState() {
     super.initState();
-    _exerciseRepo.seedIfNeeded(exercises); // temporary, until "add exercise" exists
+    // Temporary, until "add exercise" exists. Must run after sign-in,
+    // otherwise the Firestore rules reject the write.
+    _authSub = _authRepo.authStateChanges().listen((user) {
+      if (user != null && !_seeded) {
+        _seeded = true;
+        _exerciseRepo.seedIfNeeded(exercises);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -56,10 +68,24 @@ class _GymTrackerAppState extends State<GymTrackerApp> {
     return MaterialApp(
       title: 'Gym Tracker',
       debugShowCheckedModeBanner: false,
-      home: HomePage(
-        exercisesRepository: _exerciseRepo,
-        sessionRepository: _sessionRepo,
-        profileRepository: _profileRepo,
+      home: StreamBuilder<AuthUser?>(
+        stream: _authRepo.authStateChanges(),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (snap.data == null) {
+            return LoginPage(authRepository: _authRepo);
+          }
+          return HomePage(
+            exercisesRepository: _exerciseRepo,
+            sessionRepository: _sessionRepo,
+            profileRepository: _profileRepo,
+            onSignOut: _authRepo.signOut,
+          );
+        },
       ),
     );
   }

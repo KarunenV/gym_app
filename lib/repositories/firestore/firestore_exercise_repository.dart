@@ -23,6 +23,9 @@ class FirestoreExerciseRepository implements ExerciseRepository {
   }
 
   @override
+  String newId() => _col.doc().id; // generated locally, works offline
+
+  @override
   void add(Exercise exercise) {
     _col.doc(exercise.id).set(exercise.toMap()); // not awaited: works offline
   }

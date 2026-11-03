@@ -13,6 +13,7 @@ class LastDoneText extends StatelessWidget {
     this.group,
     this.exerciseId,
     this.style,
+    this.crossAxisAlignment = CrossAxisAlignment.center,
   });
 
   final SessionRepository repository;
@@ -20,11 +21,17 @@ class LastDoneText extends StatelessWidget {
   final WorkoutGroup? group;
   final String? exerciseId;
   final TextStyle? style;
+  final CrossAxisAlignment crossAxisAlignment;
 
   @override
   Widget build(BuildContext context) {
+    final textAlign = crossAxisAlignment == CrossAxisAlignment.start
+        ? TextAlign.start
+        : TextAlign.center;
+
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: crossAxisAlignment,
       children: [
         for (final p in profiles)
           _LastDoneRow(
@@ -34,6 +41,7 @@ class LastDoneText extends StatelessWidget {
             group: group,
             exerciseId: exerciseId,
             style: style,
+            textAlign: textAlign,
           ),
       ],
     );
@@ -48,6 +56,7 @@ class _LastDoneRow extends StatefulWidget {
     required this.group,
     required this.exerciseId,
     required this.style,
+    required this.textAlign,
   });
 
   final SessionRepository repository;
@@ -55,6 +64,7 @@ class _LastDoneRow extends StatefulWidget {
   final WorkoutGroup? group;
   final String? exerciseId;
   final TextStyle? style;
+  final TextAlign textAlign;
 
   @override
   State<_LastDoneRow> createState() => _LastDoneRowState();
@@ -83,7 +93,7 @@ class _LastDoneRowState extends State<_LastDoneRow> {
         }
         return Text(
           '${widget.profile.name}: $text',
-          textAlign: TextAlign.center,
+          textAlign: widget.textAlign,
           style: widget.style,
         );
       },

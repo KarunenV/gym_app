@@ -4,6 +4,7 @@ import '../models/profile.dart';
 import '../models/workout_group.dart';
 import '../repositories/base/exercise_repository.dart';
 import '../repositories/base/session_repository.dart';
+import '../widgets/add_exercise_dialog.dart';
 import '../widgets/last_done_text.dart';
 import 'workout_entry_page.dart';
 
@@ -24,24 +25,43 @@ class ExerciseListPage extends StatelessWidget {
   String get _label =>
       workoutGroup.name[0].toUpperCase() + workoutGroup.name.substring(1);
 
+  Future<void> _addExercise(
+      BuildContext context, List<Exercise> existing) async {
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => AddExerciseDialog(
+        groupLabel: _label,
+        existingNames: existing.map((e) => e.name).toList(),
+      ),
+    );
+    if (name == null) return;
+
+    // The list updates by itself: the local write triggers the snapshot stream.
+    exerciseRepository.add(
+      Exercise(
+        id: exerciseRepository.newId(),
+        name: name,
+        group: workoutGroup,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('$_label Exercises')),
-      body: StreamBuilder<List<Exercise>>(
-        stream: exerciseRepository.watchByGroup(workoutGroup),
-        builder: (context, snap) {
-          if (snap.hasError) {
-            return Center(child: Text('Error: ${snap.error}'));
-          }
-          if (!snap.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final exercises = snap.data!;
-          if (exercises.isEmpty) {
-            return Center(child: Text('No exercises found for $_label.'));
-          }
-          return ListView.separated(
+    return StreamBuilder<List<Exercise>>(
+      stream: exerciseRepository.watchByGroup(workoutGroup),
+      builder: (context, snap) {
+        final exercises = snap.data ?? const <Exercise>[];
+
+        Widget body;
+        if (snap.hasError) {
+          body = Center(child: Text('Error: ${snap.error}'));
+        } else if (!snap.hasData) {
+          body = const Center(child: CircularProgressIndicator());
+        } else if (exercises.isEmpty) {
+          body = Center(child: Text('No exercises found for $_label.'));
+        } else {
+          body = ListView.separated(
             // Bottom padding clears the FAB (~72) plus the system nav bar.
             padding: EdgeInsets.fromLTRB(
               16,
@@ -50,7 +70,7 @@ class ExerciseListPage extends StatelessWidget {
               16 + 72 + MediaQuery.of(context).padding.bottom,
             ),
             itemCount: exercises.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (_, _) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final exercise = exercises[index];
               return Card(
@@ -64,6 +84,7 @@ class ExerciseListPage extends StatelessWidget {
                       profiles: profiles,
                       exerciseId: exercise.id,
                       style: const TextStyle(fontSize: 12),
+                      crossAxisAlignment: CrossAxisAlignment.start,
                     ),
                   ),
                   trailing: const Icon(Icons.chevron_right),
@@ -81,14 +102,18 @@ class ExerciseListPage extends StatelessWidget {
               );
             },
           );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Add exercise coming soon')),
-        ),
-        child: const Icon(Icons.add),
-      ),
+        }
+
+        return Scaffold(
+          appBar: AppBar(title: Text('$_label Exercises')),
+          body: body,
+          floatingActionButton: FloatingActionButton(
+            tooltip: 'Add exercise',
+            onPressed: () => _addExercise(context, exercises),
+            child: const Icon(Icons.add),
+          ),
+        );
+      },
     );
   }
 }

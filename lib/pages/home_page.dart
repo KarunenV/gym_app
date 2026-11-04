@@ -67,86 +67,102 @@ class HomeBody extends StatefulWidget {
 }
 
 class _HomeBodyState extends State<HomeBody> {
+  // Created once so rebuilds don't resubscribe.
+  late final Stream<List<Profile>> _profilesStream =
+  widget.profileRepository.watchProfiles();
+
   void _setProfileActive(Profile profile, bool isActive) {
-    widget.profileRepository.updateProfile(
-      Profile(id: profile.id, name: profile.name, isActive: isActive),
-    );
-    setState(() {});
+    // No setState needed: the local write re-emits on the stream.
+    widget.profileRepository.setActive(profile.id, isActive);
   }
 
   @override
   Widget build(BuildContext context) {
-    final profiles = widget.profileRepository.getProfiles();
-    final active = profiles.where((p) => p.isActive).toList();
+    return StreamBuilder<List<Profile>>(
+      stream: _profilesStream,
+      builder: (context, snap) {
+        if (snap.hasError) {
+          return Center(child: Text('Error: ${snap.error}'));
+        }
+        if (!snap.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Who is training today?',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  for (var i = 0; i < profiles.length; i++) ...[
-                    if (i > 0) const Divider(height: 1),
-                    CheckboxListTile(
-                      title: Text(profiles[i].name),
-                      value: profiles[i].isActive,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                      onChanged: (v) => _setProfileActive(profiles[i], v ?? false),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Choose your workout',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 16),
-            for (final group in WorkoutGroup.values)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: WorkoutCard(
-                    profiles: active,
-                    workoutGroup: group,
-                    sessionRepository: widget.sessionRepository,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ExerciseListPage(
-                          workoutGroup: group,
-                          profiles: active,
-                          exerciseRepository: widget.exercisesRepository,
-                          sessionRepository: widget.sessionRepository,
+        final profiles = snap.data!;
+        final active = profiles.where((p) => p.isActive).toList();
+
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Who is training today?',
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < profiles.length; i++) ...[
+                        if (i > 0) const Divider(height: 1),
+                        CheckboxListTile(
+                          title: Text(profiles[i].name),
+                          value: profiles[i].isActive,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16),
+                          onChanged: (v) =>
+                              _setProfileActive(profiles[i], v ?? false),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Choose your workout',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 16),
+                for (final group in WorkoutGroup.values)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: WorkoutCard(
+                        profiles: active,
+                        workoutGroup: group,
+                        sessionRepository: widget.sessionRepository,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ExerciseListPage(
+                              workoutGroup: group,
+                              profiles: active,
+                              exerciseRepository: widget.exercisesRepository,
+                              sessionRepository: widget.sessionRepository,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-          ],
-        ),
-      ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

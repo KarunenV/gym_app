@@ -7,8 +7,8 @@ import 'pages/home_page.dart';
 import 'pages/login_page.dart';
 import 'repositories/firebase/firebase_auth_repository.dart';
 import 'repositories/firestore/firestore_exercise_repository.dart';
+import 'repositories/firestore/firestore_profile_repository.dart';
 import 'repositories/firestore/firestore_session_repository.dart';
-import 'repositories/mock/mock_profile_repository.dart';
 
 const String householdId = 'default_household';
 
@@ -37,10 +37,7 @@ class _GymTrackerAppState extends State<GymTrackerApp> {
   final _authRepo = FirebaseAuthRepository();
   final _exerciseRepo = FirestoreExerciseRepository(householdId);
   final _sessionRepo = FirestoreSessionRepository(householdId);
-  final _profileRepo = MockProfileRepository();
-
-  // Created once, so rebuilds don't resubscribe the StreamBuilder.
-  late final Stream<AuthUser?> _authStream = _authRepo.authStateChanges();
+  final _profileRepo = FirestoreProfileRepository(householdId);
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +45,7 @@ class _GymTrackerAppState extends State<GymTrackerApp> {
       title: 'Gym Tracker',
       debugShowCheckedModeBanner: false,
       home: StreamBuilder<AuthUser?>(
-        stream: _authStream,
+        stream: _authRepo.authStateChanges(),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Scaffold(

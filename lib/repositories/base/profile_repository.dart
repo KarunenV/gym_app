@@ -1,9 +1,7 @@
 import '../../models/profile.dart';
 
 abstract class ProfileRepository {
-  List<Profile> getProfiles();
+  Stream<List<Profile>> watchProfiles();
 
-  Profile getProfileById(String id);
-
-  void updateProfile(Profile profile);
+  void setActive(String id, bool isActive);
 }
